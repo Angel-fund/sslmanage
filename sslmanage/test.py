@@ -16,7 +16,7 @@ def _qiniu_ssl(cert_option):
                         access_key,
                         secret_key)
     # 上传ssl
-    cmd.upload_ssl()
+    # cmd.upload_ssl()
     cmd.handle()
 
 
