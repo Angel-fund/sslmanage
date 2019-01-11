@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="sslmanage",
-    version="1.0.2",
+    version="1.0.3",
     description="七牛，又拍云证书更新",
     author="osmen",
     license='BSD License',
@@ -14,7 +14,7 @@ setuptools.setup(
     author_email="lijiguan1@gmail.com",
     # py_modules=['qiniu_ssl', 'upyun_ssl', 'base'],
     classifiers=['Programming Language :: Python :: 3.6'],
-    url='https://github.com/Angel-fund',
+    url='https://github.com/Angel-fund/sslmanage',
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),

@@ -10,13 +10,13 @@ certManager = UpCertManager(req_session,
                             domain=['cdn.xx.com','img.xx.com'],
                             cert_file='/root/xx.com.crt',
                             key_file='/root/xx.com.key',)
-# 获取证书
-# certManager.get_cert_by_domain()
 
 # 上传证书
 certManager.add_cert()
 # 更新证书
 certManager.set_cert()
+# 获取证书
+# certManager.get_cert_by_domain()
 ```
 
 ### 七牛上传更新证书
@@ -86,7 +86,6 @@ def run_test(platform, cert_option):
 
 
 if __name__ == '__main__':
-    # python upssl.py --domain xx.top --cert_dir /home/kaifazhe/Downloads/xx.top/ --platform qiniu,upyun
     parser = argparse.ArgumentParser()
     parser.add_argument("--domain", help="根域如invit.vip 不加二级域名", type=str)
     parser.add_argument("--cert_dir", help="证书目录", type=str)
@@ -115,3 +114,16 @@ if __name__ == '__main__':
     run_test(args.platform, cert_task_map[args.domain])
 
 ```
+
+**运行脚本**
+```
+python upssl.py --domain xx.top --cert_dir /home/kaifazhe/Downloads/xx.top/ --platform qiniu,upyun
+```
+
+**将脚本放到 acme.sh证书颁发脚本中**
+如颁发　xx.top域名，编辑配置文件
+```
+ vi ~/.acme.sh/xx.top/xx.top.conf
+ Le_ReloadCmd='/xx/python /xxx/upssl.py --domain xx.top --cert_dir /home/kaifazhe/Downloads/xx.top/ --platform qiniu,upyun'
+```
+每当acme.sh　更新证书时会执行该脚本，这样妈妈再也不用担心证书过期了！
