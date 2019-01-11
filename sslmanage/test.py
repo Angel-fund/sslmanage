@@ -7,8 +7,8 @@ from sslmanage.upyun_ssl import HTTPClient, UpLogin, UpCertManager
 def _qiniu_ssl(cert_option):
     print(cert_option)
 
-    access_key = 't3HDvmNGbqkNlzmS7CpukBBk_tJh4OYuVlA6Gs1t'
-    secret_key = 'JB-8rRpVgV6HgEUOPUW6QK0GshGxUCcNoPQiLwJU'
+    access_key = 'xx'
+    secret_key = 'xx'
     cmd = QnCertManager(cert_option['root_domain'],
                         cert_option['domain']['qiniu'],
                         cert_option['cert_file'],

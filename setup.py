@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="sslmanage",
-    version="1.0.3",
+    version="1.0.4",
     description="七牛，又拍云证书更新",
     author="osmen",
     license='BSD License',
