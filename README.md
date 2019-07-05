@@ -37,12 +37,18 @@ cmd.handle()
 ``` upssl.py
 # coding: utf-8
 import argparse
-from sslmanage.qiniu_ssl import QnCertManager
-from sslmanage.upyun_ssl import HTTPClient, UpLogin, UpCertManager
+from sslmanage import QnCertManager, Mail
+from sslmanage import HTTPClient, UpLogin, UpCertManager
 
 
 def _qiniu_ssl(cert_option):
     print(cert_option)
+    # 邮件通知
+    stmpSvr = Mail(smtp_host="smtp.exmail.qq.com",
+                   smtp_prot="465",
+                   smtp_user="xx",
+                   smtp_pass="xx!",
+                   receiver_mail="xx@qq.com")
 
     access_key = 'xx'
     secret_key = 'oo'
@@ -51,7 +57,8 @@ def _qiniu_ssl(cert_option):
                         cert_option['cert_file'],
                         cert_option['key_file'],
                         access_key,
-                        secret_key)
+                        secret_key,
+                        mail_svr=stmpSvr)
 
     cmd.handle()
 
@@ -59,12 +66,18 @@ def _qiniu_ssl(cert_option):
 def _upyun_ssl(cert_option):
     print(cert_option)
     req_session = HTTPClient()
+    stmpSvr = Mail(smtp_host="smtp.exmail.qq.com",
+                   smtp_prot="465",
+                   smtp_user="xx",
+                   smtp_pass="xx!",
+                   receiver_mail="xx@qq.com")
     # # # 登录
     UpLogin(req_session, user='xx', passwd='xx')
     certManager = UpCertManager(req_session,
                                 domain=cert_option['domain']['upyun'],
                                 cert_file=cert_option['cert_file'],
-                                key_file=cert_option['key_file'])
+                                key_file=cert_option['key_file'],
+                                mail_svr=stmpSvr)
     # 获取证书
     # certManager.get_cert_by_domain()
 

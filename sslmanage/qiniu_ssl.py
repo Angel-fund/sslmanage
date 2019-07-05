@@ -12,7 +12,7 @@ class QnCertManager(BaseSsl):
     """
     HOST = "api.qiniu.com"
 
-    def __init__(self, root_domain, domain, cert_file, key_file, access_key, secret_key):
+    def __init__(self, root_domain, domain, cert_file, key_file, access_key, secret_key, mail_svr=None):
         super().__init__(cert_file, key_file)
 
         if isinstance(domain, str):
@@ -23,12 +23,13 @@ class QnCertManager(BaseSsl):
         self.key_file = key_file
         self.access_key = access_key
         self.secret_key = secret_key
+        self.mail_svr = mail_svr
 
     def handle(self, *args, **options):
         certid, ok = self.upload_ssl()
         domains = self.domain  # ['mt-avatar.hlsgl.top', 'mt-share.hlsgl.top', 'mt-card.hlsgl.top']
-        print(certid, ok)
         if not ok:
+            self.send_mail("upload ssl error: %s" % certid)
             log_info("upload ssl error: %s" % certid)
             return
 
@@ -36,6 +37,12 @@ class QnCertManager(BaseSsl):
         for domain in domains:
             resp = self.replace_ssl(domain=domain, certid=certid)
             log_info("replace ssl result: %s" % resp.content)
+
+        self.send_mail("证书更新完成: %s" % certid)
+
+    def send_mail(self, msg):
+        if self.mail_svr:
+            self.mail_svr.send_mail(f'七牛:{msg}')
 
     def upload_ssl(self):
         session = requests.Session()

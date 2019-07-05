@@ -1,12 +1,11 @@
 # coding: utf-8
 import argparse
-from sslmanage.qiniu_ssl import QnCertManager
-from sslmanage.upyun_ssl import HTTPClient, UpLogin, UpCertManager
+from sslmanage import QnCertManager
+from sslmanage import HTTPClient, UpLogin, UpCertManager
+from sslmanage import Mail
 
 
 def _qiniu_ssl(cert_option):
-    print(cert_option)
-
     access_key = 'xx'
     secret_key = 'xx'
     cmd = QnCertManager(cert_option['root_domain'],
@@ -17,18 +16,24 @@ def _qiniu_ssl(cert_option):
                         secret_key)
     # 上传ssl
     # cmd.upload_ssl()
+
     cmd.handle()
 
 
 def _upyun_ssl(cert_option):
-    print(cert_option)
     req_session = HTTPClient()
-    # # # 登录
-    UpLogin(req_session, user='xx', passwd='xx')
+    stmpSvr = Mail(smtp_host="smtp.exmail.qq.com",
+                   smtp_prot="465",
+                   smtp_user="xx",
+                   smtp_pass="xx",
+                   receiver_mail="x@qq.com")
+    #  登录
+    UpLogin(req_session, user='x', passwd='x')
     certManager = UpCertManager(req_session,
                                 domain=cert_option['domain']['upyun'],
                                 cert_file=cert_option['cert_file'],
-                                key_file=cert_option['key_file'])
+                                key_file=cert_option['key_file'],
+                                mail_svr=stmpSvr)
     # 获取证书
     # certManager.get_cert_by_domain()
 
@@ -50,7 +55,7 @@ def run_test(platform, cert_option):
 
 
 if __name__ == '__main__':
-    # python test.py --domain hlsgl.top --cert_dir /home/kaifazhe/Downloads/invit.vip/ --platform qiniu
+    # python test.py --domain hlsgl.top --cert_dir /home/kaifazhe/Downloads/invit.vip/ --platform qiniu,upyun
     parser = argparse.ArgumentParser()
     parser.add_argument("--domain", help="根域如invit.vip 不加二级域名", type=str)
     parser.add_argument("--cert_dir", help="证书目录", type=str)
@@ -61,7 +66,7 @@ if __name__ == '__main__':
         'hlsgl.top': {
             'root_domain': 'hlsgl.top',
             'domain': {
-                'upyun': ['cdn.hlsgl.top', 'mt-cdn.hlsgl.top'],
+                'upyun': ['wwj.hlsgl.top'],
                 'qiniu': ['mt-avatar.hlsgl.top', 'mt-share.hlsgl.top', 'mt-card.hlsgl.top']
             },
             'cert_file': f'{args.cert_dir}fullchain.cer',

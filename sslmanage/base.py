@@ -20,3 +20,4 @@ class BaseSsl:
 
         with open(self.key_file, 'r+') as f_pri:
             self.cert_key = f_pri.read()
+

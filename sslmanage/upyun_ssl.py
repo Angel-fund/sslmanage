@@ -21,6 +21,7 @@ URLS = {
     'cert_service': '/api/https/services/manager',
     'bucket_domain': '/api/buckets/domains/',
     'bucket': '/api/buckets/info/',
+    'migrate_cert': '/api/https/migrate/certificate',
 }
 
 
@@ -89,7 +90,7 @@ class HTTPClient:
             return response
         else:
             log_info('req err', response.content)
-            return response.content
+            return None
 
 
 class UpLogin:
@@ -117,12 +118,13 @@ class UpCertManager(BaseSsl):
     upyun cert管理: 添加证书 ->获取域名证书列表 ->选择最新证书 ->设置证书
     domain为数组时可以多个域名共用一张证数
     """
-    def __init__(self, session, domain, cert_file, key_file):
+    def __init__(self, session, domain, cert_file, key_file, mail_svr=None):
         super().__init__(cert_file, key_file)
 
         self.session = session
         self.cert_file = cert_file
         self.key_file = key_file
+        self.mail_svr = mail_svr
         if isinstance(domain, str):
             domain = [domain]
         self.domain = domain
@@ -135,7 +137,7 @@ class UpCertManager(BaseSsl):
         }
         req_url = URLS['add_cert']
         resp = self.session.send(req_url, method='post', data=json.dumps(params).encode('utf-8'))
-        cert_info = resp.json()
+        cert_info = resp.content.decode()
         log_info(f'upssl =>{cert_info}')
 
     def get_cert_by_cid(self, cid):
@@ -154,7 +156,7 @@ class UpCertManager(BaseSsl):
                     "type":"file",
                     "bucket_id":1083190,
                     "bucket_name":"annecard",
-                    "https":true,
+                    "https":true,   # 启用了此项则开启了https
                     "force_https":false,
                     "source_https":false
                 },
@@ -176,9 +178,28 @@ class UpCertManager(BaseSsl):
             ]
         }}
         """
-        req_url = URLS['cert_detail']
-        certificate_info = self.session.send(req_url, method='post', data={'certificate_id': cid})
+        req_url = URLS['cert']
+        certificate_info = self.session.send(req_url, method='GET', params={'certificate_id': cid})
         return certificate_info
+
+    def migrate_cert(self, old_crt_id, new_crt_id):
+        # 查询旧证书上是否有迁移域名
+        # old_crt_info = self.get_cert_by_cid(old_crt_id)
+        # if old_crt_id.get('data').get('authenticate_num') > 0:
+        #     pass
+
+        req_url = URLS['migrate_cert']
+        resp = self.session.send(req_url, method='post', json={
+                                  "old_crt_id": old_crt_id,
+                                  "new_crt_id": new_crt_id
+                                })
+        cert_info = resp.json()
+        return len(cert_info.get('msg').get('errors')) == 0
+
+    def send_mail(self, msg):
+        if self.mail_svr:
+            self.mail_svr.send_mail(f'又拍云:{msg}')
+        print(msg)
 
     def set_cert(self):
         """ 设置cert是否开启
@@ -187,7 +208,23 @@ class UpCertManager(BaseSsl):
             "msg": {"errors": [], "messages": []}
         }
         """
-        certificate_id = self.get_cert_by_domain()
+        certificate_id, pre_cert_id = self.get_cert_by_domain()
+        log_info(f'cert={certificate_id} pre={pre_cert_id}')
+        # 无可用证书邮件通知
+        if not certificate_id:
+            self.send_mail("无可用证书")
+            return
+
+        # 存在新旧证书,迁移证书
+        if pre_cert_id:
+            ok = self.migrate_cert(pre_cert_id, certificate_id)
+            mail_msg = "迁移证书完成"
+            if not ok:
+                mail_msg = "迁移证书失败"
+
+            self.send_mail(mail_msg)
+            return
+
         success_domain = []
         fail_domain = []
         for domain in self.domain:
@@ -211,7 +248,7 @@ class UpCertManager(BaseSsl):
             req_url = URLS['cert']
             resp = self.session.send(req_url, method='post', data=json.dumps(params).encode('utf-8'))
             cert_info = resp.json()
-            if cert_info['data']['status']:
+            if cert_info.get('data').get('status'):
                 log_info(f'replace {domain} =>{cert_info}')
                 success_domain.append(domain)
             else:
@@ -248,18 +285,25 @@ class UpCertManager(BaseSsl):
         req_url = URLS['cert_service']
         params = {'domain': self.domain[0]}
         resp = self.session.send(req_url, method='GET', params=params)
-        cert_info = resp.json()
+        if not resp:
+            return None, None
+        cert_info = json.loads(resp.content.decode())
+
         certificate_id = None
-        if cert_info['data']['status'] == 0:
+        pre_cert_id = None  # 上一次证书的id
+        if cert_info.get('data').get('status') == 0:
             cert_list = cert_info['data']['result']
             if len(cert_list) > 0:
                 cert_list = sorted(cert_list, key=lambda x: x['validity']['end'], reverse=True)
                 certificate = cert_list[0]
+                if len(cert_list) > 1:
+                    pre_cert = cert_list[1]
+                    pre_cert_id = pre_cert['certificate_id']
                 # 过期时间大于３天的证书
                 if (int(certificate['validity']['end'])/1000) - int(time.time()) > 259200:
                     certificate_id = certificate['certificate_id']
         log_info(f'获取{params["domain"]}最新证书=>{certificate_id}')
-        return certificate_id
+        return certificate_id, pre_cert_id
 
     def get_bucket_info(self, bucket_name):
         """ 获取bucket信息
