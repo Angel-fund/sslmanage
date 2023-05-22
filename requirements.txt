@@ -1,2 +1,2 @@
-requests==2.20.1
+requests==2.31.0
 qiniu==7.1.4
