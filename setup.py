@@ -19,7 +19,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
     install_requires=[
-        'requests==2.20.1',
+        'requests==2.31.0',
         'qiniu==7.1.4',
     ]
 )
